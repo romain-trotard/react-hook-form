@@ -281,12 +281,10 @@ export function createFormControl<
     };
     const isPreviousFieldTouched = get(_formState.touchedFields, name);
 
-    if (_proxyFormState.isDirty) {
-      const isPreviousFormDirty = _formState.isDirty;
+    const isPreviousFormDirty = _formState.isDirty;
 
-      _formState.isDirty = output.isDirty = _getDirty();
-      isFieldDirty = isPreviousFormDirty !== output.isDirty;
-    }
+    _formState.isDirty = output.isDirty = _getDirty();
+    isFieldDirty = isPreviousFormDirty !== output.isDirty;
 
     if (_proxyFormState.dirtyFields && (!isBlurEvent || shouldDirty)) {
       const isPreviousFieldDirty = get(_formState.dirtyFields, name);

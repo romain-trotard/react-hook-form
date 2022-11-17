@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useReducer } from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 
 import { Controller } from '../controller';
 import { Control } from '../types';
 import { useFieldArray } from '../useFieldArray';
 import { useForm } from '../useForm';
+import { FormProvider } from '../useFormContext';
 import { useFormState } from '../useFormState';
 import deepEqual from '../utils/deepEqual';
 
@@ -642,5 +643,95 @@ describe('useFormState', () => {
     render(<Component />);
 
     expect(screen.getByText('yes')).toBeVisible();
+  });
+
+  function DirtyMessage() {
+    const { isDirty } = useFormState();
+
+    return <p>Dirty form: {isDirty.toString()}</p>;
+  }
+
+  function ArticleTest() {
+    const [showDirty, toggleShowDirty] = useReducer((prev) => !prev, false);
+    const formData = useForm({
+      defaultValues: {
+        firstname: '',
+        lastname: '',
+      },
+    });
+
+    return (
+      <div>
+        <p>
+          Sandbox to show problem when there is too much optimization and not
+          mutating references.
+        </p>
+        <p>
+          You can see the code problem in the{' '}
+          <a
+            href="https://github.com/react-hook-form/react-hook-form/blob/c69e9b9678877ab532660cc08c31d236591a3664/src/logic/createFormControl.ts#L284"
+            target="_blank"
+            rel="noreferrer"
+          >
+            React Hook Form codebase
+          </a>
+        </p>
+        <p>To see the problem:</p>
+        <ul>
+          <li>type something in a field</li>
+          <li>show the dirty message by clicking</li>
+        </ul>
+
+        <div className="alert">
+          <span className="title">Note:</span>
+          <p>
+            Once you have subscribe to with `isDirty` it will be always updated
+            even if you do not display the message anymore
+          </p>
+        </div>
+
+        <button type="button" onClick={toggleShowDirty}>
+          {showDirty ? 'Hide dirty message' : 'Show dirty message'}
+        </button>
+        <FormProvider {...formData}>
+          {showDirty && <DirtyMessage />}
+          <form onSubmit={formData.handleSubmit(() => {})}>
+            <label>
+              Firstname
+              <input type="text" {...formData.register('firstname')} />
+            </label>
+            <label>
+              Lastname
+              <input type="text" {...formData.register('lastname')} />
+            </label>
+            <button type="submit">Submit</button>
+          </form>
+        </FormProvider>
+        <p>
+          Link to my article{' '}
+          <a
+            href="https://dev.to/romaintrotard/react-hook-form-a-unique-implementation-5aec-temp-slug-6523987"
+            target="_blank"
+            rel="noreferrer"
+          >
+            React Hook Form: a unique implementation
+          </a>
+        </p>
+      </div>
+    );
+  }
+
+  it('should work right', () => {
+    render(<ArticleTest />);
+
+    const showButton = screen.getByText('Show dirty message');
+
+    fireEvent.change(screen.getByLabelText('Firstname'), {
+      target: { value: 'Bob' },
+    });
+
+    fireEvent.click(showButton);
+
+    expect(screen.getByText('Dirty form: true'));
   });
 });
